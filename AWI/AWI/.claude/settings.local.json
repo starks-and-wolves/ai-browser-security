@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm create vite@latest frontend -- --template react)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(brew services start:*)",
+      "Bash(mongod:*)",
+      "Bash(npm run dev:*)",
+      "Bash(brew tap:*)",
+      "Bash(brew install:*)",
+      "Bash(cat:*)",
+      "WebSearch",
+      "Bash(curl:*)",
+      "Bash(chmod:*)",
+      "Bash(node security-tests.js:*)",
+      "Bash(python3:*)",
+      "Bash(node query_session.js:*)",
+      "Bash(redis-cli ping:*)",
+      "Bash(./setup_redis_password.sh)",
+      "Bash(node test_redis_awi.js:*)",
+      "Bash(pip install:*)",
+      "Bash(redis-cli:*)",
+      "Bash(ls:*)",
+      "Bash(brew services:*)",
+      "Bash(npm run test:rate-limits:*)",
+      "Bash(/tmp/verify_secrets_removed.sh)",
+      "Bash(tree:*)"
+    ]
+  }
+}

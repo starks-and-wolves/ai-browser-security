@@ -1,0 +1,384 @@
+/**
+ * AWI Manifest Controller
+ *
+ * Serves the dynamically generated .well-known/llm-text manifest
+ */
+
+const {
+  generateRateLimitsSection,
+  generateCapabilitiesRateLimits,
+  generateSecurityRateLimiting
+} = require('../utils/awiManifestGenerator');
+
+/**
+ * Get the complete AWI manifest
+ * @route GET /.well-known/llm-text
+ */
+const getAWIManifest = (req, res) => {
+  const manifest = {
+    $schema: 'https://example.com/schemas/awi-discovery/v1.0',
+    awi: {
+      version: '1.0',
+      name: 'Blog AWI',
+      description: 'Agent Web Interface for a blog platform with full CRUD operations, search, and session state management',
+      specification: 'openapi-3.0',
+      provider: 'AWI Blog Platform'
+    },
+    discovery: {
+      discoveredVia: '/.well-known/llm-text',
+      discoveryMethods: [
+        'well-known-uri',
+        'http-headers',
+        'capabilities-endpoint'
+      ]
+    },
+    capabilities: {
+      description: 'Directive-style capability declarations for quick agent parsing',
+      allowed_operations: [
+        'read',
+        'write',
+        'search',
+        'list',
+        'get',
+        'create',
+        'session-query'
+      ],
+      disallowed_operations: [
+        'delete',
+        'admin',
+        'bulk-operations',
+        'system-access'
+      ],
+      rate_limits: generateCapabilitiesRateLimits(),
+      confirmation_required: ['none'],
+      security_features: [
+        'sanitize-html: strict',
+        'validate-inputs: strict',
+        'detect-prompt-injection: true',
+        'detect-xss: true',
+        'detect-nosql-injection: true',
+        'detect-command-injection: true',
+        'block-on-violation: true',
+        'strip-mongodb-operators: true',
+        'path-traversal-protection: true'
+      ],
+      response_features: [
+        'structured-responses: true',
+        'semantic-metadata: true',
+        'session-state: enabled',
+        'trajectory-tracking: enabled',
+        'incremental-updates: enabled',
+        'available-actions: included'
+      ],
+      data_handling: [
+        'json-only: true',
+        'pagination: enabled',
+        'max-page-size: 100',
+        'default-page-size: 10'
+      ],
+      session_management: [
+        'session-timeout: 30min',
+        'auto-cleanup: enabled',
+        'state-persistence: mongodb',
+        'multi-session: supported'
+      ]
+    },
+    endpoints: {
+      base: 'http://localhost:5000/api/agent',
+      capabilities: 'http://localhost:5000/api/agent/capabilities',
+      documentation: 'http://localhost:5000/api/agent/docs',
+      openapi_spec: 'http://localhost:5000/api/agent/docs',
+      swagger_ui: 'http://localhost:5000/api/agent/docs/ui',
+      registration: 'http://localhost:5000/api/agent/register'
+    },
+    authentication: {
+      type: 'bearer',
+      scheme: 'api-key',
+      headerName: 'X-Agent-API-Key',
+      registration: {
+        endpoint: 'http://localhost:5000/api/agent/register',
+        method: 'POST',
+        required_fields: ['name'],
+        optional_fields: ['description', 'permissions', 'agentType', 'framework']
+      },
+      permissions: {
+        available: ['read', 'write', 'delete'],
+        default: ['read']
+      }
+    },
+    operations: {
+      posts: {
+        list: {
+          method: 'GET',
+          endpoint: '/posts',
+          description: 'List all blog posts with pagination and search',
+          permissions: ['read'],
+          parameters: ['page', 'limit', 'search'],
+          returns: 'paginated post list with metadata'
+        },
+        get: {
+          method: 'GET',
+          endpoint: '/posts/{id}',
+          description: 'Get a single post by ID',
+          permissions: ['read'],
+          parameters: ['id'],
+          returns: 'complete post with metadata and available actions'
+        },
+        create: {
+          method: 'POST',
+          endpoint: '/posts',
+          description: 'Create a new blog post',
+          permissions: ['write'],
+          required_fields: ['title', 'content'],
+          optional_fields: ['authorName', 'category', 'tags'],
+          validation: {
+            title: '3-200 characters, alphanumeric with basic punctuation',
+            content: '10-50000 characters, HTML allowed (sanitized)',
+            tags: 'max 10 items, 2-30 chars each, lowercase alphanumeric with hyphens'
+          },
+          security: {
+            html_sanitization: true,
+            prompt_injection_detection: true,
+            xss_protection: true
+          }
+        }
+      },
+      comments: {
+        list: {
+          method: 'GET',
+          endpoint: '/posts/{postId}/comments',
+          description: 'Get all comments for a post',
+          permissions: ['read'],
+          parameters: ['postId']
+        },
+        create: {
+          method: 'POST',
+          endpoint: '/posts/{postId}/comments',
+          description: 'Add a comment to a post',
+          permissions: ['write'],
+          required_fields: ['content'],
+          optional_fields: ['authorName'],
+          validation: {
+            content: '1-1000 characters, HTML allowed (sanitized)'
+          }
+        }
+      },
+      search: {
+        method: 'POST',
+        endpoint: '/search',
+        description: 'Advanced natural language search',
+        permissions: ['read'],
+        required_fields: ['query'],
+        optional_fields: ['intent', 'filters']
+      }
+    },
+    features: {
+      session_state: {
+        enabled: true,
+        description: 'Server-side session state tracking for stateful agent interactions',
+        endpoints: {
+          state: 'http://localhost:5000/api/agent/session/state',
+          history: 'http://localhost:5000/api/agent/session/history',
+          diff: 'http://localhost:5000/api/agent/session/diff',
+          cache: 'http://localhost:5000/api/agent/session/cache',
+          end: 'http://localhost:5000/api/agent/session/end',
+          list: 'http://localhost:5000/api/agent/sessions'
+        },
+        benefits: [
+          '500x token reduction vs stateless API',
+          'Trajectory tracking for debugging and RL',
+          'State-based action validation',
+          'Incremental updates (diffs)',
+          'Automatic session cleanup'
+        ]
+      },
+      structured_responses: {
+        enabled: true,
+        description: 'All responses include semantic metadata, available actions, and structured data',
+        format: 'JSON with _metadata field'
+      },
+      semantic_metadata: {
+        enabled: true,
+        description: 'Responses include schema.org-compatible metadata for better AI understanding',
+        schemas: ['BlogPosting', 'Comment']
+      },
+      trajectory_tracking: {
+        enabled: true,
+        description: 'Complete action history with observations for debugging and RL training',
+        endpoint: 'http://localhost:5000/api/agent/session/history'
+      },
+      incremental_updates: {
+        enabled: true,
+        description: 'Get only changed state via diff endpoint',
+        endpoint: 'http://localhost:5000/api/agent/session/diff'
+      },
+      pagination: {
+        enabled: true,
+        default_limit: 10,
+        max_limit: 100
+      },
+      search: {
+        enabled: true,
+        type: 'natural_language',
+        mongodb_text_search: true
+      }
+    },
+    security: {
+      input_validation: {
+        enabled: true,
+        framework: 'express-validator',
+        description: 'Comprehensive input validation on all endpoints'
+      },
+      html_sanitization: {
+        enabled: true,
+        library: 'sanitize-html',
+        description: 'HTML content sanitized to prevent XSS attacks'
+      },
+      nosql_injection_protection: {
+        enabled: true,
+        description: 'MongoDB operators stripped from queries'
+      },
+      prompt_injection_detection: {
+        enabled: true,
+        description: 'Detects and blocks prompt injection attempts in agent-created content',
+        patterns: [
+          'ignore instructions',
+          'system prompt manipulation',
+          'role injection',
+          'command injection'
+        ]
+      },
+      rate_limiting: generateSecurityRateLimiting(),
+      audit_logging: {
+        enabled: false,
+        status: 'planned',
+        phase: 'Phase 2'
+      }
+    },
+    rate_limits: generateRateLimitsSection(),
+    response_format: {
+      structure: {
+        success: 'boolean',
+        data: 'object or array',
+        _metadata: {
+          schema: 'schema.org type',
+          timestamp: 'ISO 8601 timestamp',
+          availableActions: 'array of action objects'
+        },
+        _sessionState: {
+          sessionId: 'string',
+          lastAction: 'object',
+          statistics: 'object'
+        }
+      },
+      content_types: ['application/json'],
+      encoding: 'UTF-8'
+    },
+    session: {
+      timeout: '30 minutes of inactivity',
+      cleanup: 'automatic hourly cleanup of expired sessions',
+      persistence: 'MongoDB',
+      state_tracking: [
+        'navigation',
+        'filters',
+        'sort',
+        'pagination',
+        'selections',
+        'viewing_context',
+        'draft_content',
+        'recent_data_cache'
+      ]
+    },
+    standards: {
+      openapi: '3.0',
+      rest: 'RESTful API design',
+      schema_org: 'BlogPosting and Comment schemas',
+      awi_principles: 'Based on arXiv:2506.10953v1'
+    },
+    documentation: {
+      swagger_ui: 'http://localhost:5000/api/agent/docs/ui',
+      openapi_json: 'http://localhost:5000/api/agent/docs',
+      implementation_guide: '/docs/AWI_STATE_IMPLEMENTATION.md',
+      security_guide: '/docs/SECURITY.md'
+    },
+    support: {
+      issues: 'GitHub repository (if available)',
+      contact: 'API administrator',
+      version: '1.0.0'
+    },
+    compatibility: {
+      browser_agents: [
+        'browser-use',
+        'selenium-based agents',
+        'puppeteer-based agents',
+        'playwright-based agents'
+      ],
+      llm_frameworks: [
+        'LangChain',
+        'LlamaIndex',
+        'AutoGPT',
+        'AgentGPT',
+        'Custom agent frameworks'
+      ],
+      recommended_models: [
+        'GPT-4',
+        'Claude-3',
+        'Gemini-Pro',
+        'LLaMA-3'
+      ]
+    },
+    advantages_over_dom: {
+      token_reduction: '500x fewer tokens than DOM parsing',
+      structured_data: 'Semantic structure vs unstructured HTML',
+      state_management: 'Server-side state vs stateless scraping',
+      action_validation: 'Available actions prevent invalid operations',
+      efficiency: 'Direct API calls vs browser automation',
+      reliability: 'Stable API vs brittle DOM selectors',
+      security: 'Validated inputs vs injection vulnerabilities'
+    },
+    migration_guide: {
+      from_dom_scraping: {
+        step_1: 'Register agent at /api/agent/register',
+        step_2: 'Get API key from registration response',
+        step_3: 'Use X-Agent-API-Key header for authentication',
+        step_4: 'Replace DOM parsing with API calls to /api/agent/*',
+        step_5: 'Leverage session state for multi-step tasks',
+        step_6: 'Use trajectory history for debugging'
+      }
+    },
+    examples: {
+      registration: {
+        curl: 'curl -X POST http://localhost:5000/api/agent/register -H \'Content-Type: application/json\' -d \'{"name":"MyAgent","permissions":["read","write"]}\'',
+        response: {
+          success: true,
+          agent: {
+            id: '...',
+            name: 'MyAgent',
+            apiKey: 'agent_...',
+            permissions: ['read', 'write']
+          }
+        }
+      },
+      list_posts: {
+        curl: 'curl -X GET \'http://localhost:5000/api/agent/posts?page=1&limit=10\' -H \'X-Agent-API-Key: agent_...\'',
+        description: 'Fetch paginated list of posts with metadata'
+      },
+      create_post: {
+        curl: 'curl -X POST http://localhost:5000/api/agent/posts -H \'X-Agent-API-Key: agent_...\' -H \'Content-Type: application/json\' -d \'{"title":"My Post","content":"Post content","tags":["test"]}\'',
+        description: 'Create new blog post'
+      },
+      get_session_state: {
+        curl: 'curl -X GET http://localhost:5000/api/agent/session/state -H \'X-Agent-API-Key: agent_...\'',
+        description: 'Get current session state snapshot'
+      }
+    },
+    last_updated: new Date().toISOString().split('T')[0],
+    version: '1.0.2'
+  };
+
+  res.json(manifest);
+};
+
+module.exports = {
+  getAWIManifest
+};
