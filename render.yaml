@@ -1,20 +1,19 @@
 services:
-  # Backend API Service
+  # Unified Backend + Frontend Service
   - type: web
-    name: ai-browser-security-backend
+    name: ai-browser-security
     runtime: node
-    rootDir: AWI/backend
-    buildCommand: npm install
+    buildCommand: npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       # MongoDB Configuration (use MongoDB Atlas)
       - key: MONGODB_URI
-        sync: false # Set this in Render dashboard with your MongoDB Atlas connection string
+        sync: false  # Set this in Render dashboard with your MongoDB Atlas connection string
 
       # Server Configuration
       - key: PORT
-        value: 5000
+        value: 10000
       - key: NODE_ENV
         value: production
 
@@ -28,7 +27,7 @@ services:
 
       # Security Configuration
       - key: JWT_SECRET
-        generateValue: true # Render will generate a random secret
+        generateValue: true  # Render will generate a random secret
       - key: BCRYPT_ROUNDS
         value: 10
 
@@ -42,32 +41,20 @@ services:
       - key: AWI_CLEANUP_INTERVAL_MINUTES
         value: 60
 
-      # CORS Configuration (set manually after frontend deployment)
-      # Format: https://your-frontend-name.onrender.com
+      # CORS Configuration (same domain, no CORS needed)
+      # But keeping for local development
       - key: CORS_ORIGIN
-        sync: false
+        value: "*"
 
       # Admin Dashboard
       - key: ADMIN_DASHBOARD_ENABLED
         value: true
 
-  # Frontend Static Site
-  - type: web
-    name: ai-browser-security-frontend
-    runtime: static
-    rootDir: AWI/frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      # Set this to your backend URL after deployment
-      # Format: https://your-backend-name.onrender.com
+      # Frontend API URL (same domain in production)
       - key: VITE_API_URL
-        sync: false
+        value: ""  # Empty = same domain
 
 # Database Note:
 # MongoDB is not available as a native Render service.
 # Use MongoDB Atlas (free tier available): https://www.mongodb.com/cloud/atlas
+# After creating your cluster, add the connection string to MONGODB_URI in the Render dashboard.
