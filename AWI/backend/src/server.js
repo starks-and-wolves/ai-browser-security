@@ -21,7 +21,37 @@ connectDB();  // MongoDB
 // Redis connection happens automatically in redis.js
 
 // Middleware
-app.use(helmet()); // Security headers
+// Configure Helmet with appropriate CSP for serving both frontend and API
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+if (isDevelopment) {
+  // In development, disable CSP to avoid blocking dev servers, HMR, etc.
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }));
+  console.log('⚠️  CSP disabled in development mode');
+} else {
+  // In production, use strict CSP
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Allow inline scripts for React
+        styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+        imgSrc: ["'self'", "data:", "blob:", "https:"], // Allow images from various sources
+        connectSrc: ["'self'"], // Allow API calls to same origin
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        formAction: ["'self'"], // Allow form submissions to same origin
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }));
+}
+
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true

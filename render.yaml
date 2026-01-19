@@ -9,7 +9,7 @@ services:
     envVars:
       # MongoDB Configuration (use MongoDB Atlas)
       - key: MONGODB_URI
-        sync: false  # Set this in Render dashboard with your MongoDB Atlas connection string
+        sync: false # Set this in Render dashboard with your MongoDB Atlas connection string
 
       # Server Configuration
       # Note: PORT is automatically provided by Render, don't override it
@@ -26,7 +26,7 @@ services:
 
       # Security Configuration
       - key: JWT_SECRET
-        generateValue: true  # Render will generate a random secret
+        generateValue: true # Render will generate a random secret
       - key: BCRYPT_ROUNDS
         value: 10
 
@@ -49,9 +49,8 @@ services:
       - key: ADMIN_DASHBOARD_ENABLED
         value: true
 
-      # Frontend API URL (same domain in production)
-      - key: VITE_API_URL
-        value: ""  # Empty = same domain
+      # Note: VITE_API_URL is set in AWI/frontend/.env.production
+      # Vite env vars are embedded at build time, not runtime
 
 # Database Note:
 # MongoDB is not available as a native Render service.

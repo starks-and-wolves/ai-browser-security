@@ -1,12 +1,10 @@
 import axios from 'axios';
 
 // Create axios instance with default config
-// If VITE_API_URL is empty, use relative path (same domain)
-// If VITE_API_URL is set, use it as absolute URL
-// Otherwise default to localhost for development
-const baseURL = import.meta.env.VITE_API_URL === ''
-  ? '/api'
-  : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+// VITE_API_URL is set via .env files:
+// - .env.development: http://localhost:5000/api (for local dev)
+// - .env.production: /api (for same-domain deployment)
+const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL,
@@ -15,6 +13,11 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Log API configuration (helpful for debugging)
+if (import.meta.env.DEV) {
+  console.log('🔌 API Base URL:', baseURL);
+}
 
 // Request interceptor
 api.interceptors.request.use(
