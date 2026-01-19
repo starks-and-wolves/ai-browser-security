@@ -1,0 +1,104 @@
+services:
+  # Backend API Service
+  - type: web
+    name: ai-browser-security-backend
+    runtime: node
+    rootDir: AWI/AWI/backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      # MongoDB Configuration (use MongoDB Atlas)
+      - key: MONGODB_URI
+        sync: false  # Set this in Render dashboard with your MongoDB Atlas connection string
+
+      # Redis Configuration (automatically linked from redis service below)
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: ai-browser-security-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: ai-browser-security-redis
+          property: port
+      - key: REDIS_PASSWORD
+        fromService:
+          type: redis
+          name: ai-browser-security-redis
+          property: connectionString
+          envVarKey: REDIS_PASSWORD
+      - key: REDIS_DB
+        value: 0
+
+      # Server Configuration
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+
+      # Session Configuration
+      - key: SESSION_TTL_MINUTES
+        value: 30
+      - key: LIST_CACHE_TTL_MINUTES
+        value: 5
+      - key: MEDIA_CACHE_TTL_MINUTES
+        value: 60
+
+      # Security Configuration
+      - key: JWT_SECRET
+        generateValue: true  # Render will generate a random secret
+      - key: BCRYPT_ROUNDS
+        value: 10
+
+      # AWI Configuration
+      - key: AWI_MODE_ENABLED
+        value: true
+      - key: AWI_USE_REDIS
+        value: true
+      - key: AWI_MAX_ACTIONS_PER_SESSION
+        value: 1000
+      - key: AWI_CLEANUP_INTERVAL_MINUTES
+        value: 60
+
+      # CORS Configuration (will be updated after frontend deployment)
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: ai-browser-security-frontend
+          property: url
+
+      # Admin Dashboard
+      - key: ADMIN_DASHBOARD_ENABLED
+        value: true
+
+  # Frontend Static Site
+  - type: web
+    name: ai-browser-security-frontend
+    runtime: static
+    rootDir: AWI/AWI/frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: ai-browser-security-backend
+          property: url
+
+  # Redis Cache Service
+  - type: redis
+    name: ai-browser-security-redis
+    plan: starter  # Free tier (25MB), upgrade to 'standard' for production
+    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when memory is full
+    ipAllowList: []  # Empty = allow all (Render services only)
+
+# Database Note:
+# MongoDB is not available as a native Render service.
+# Use MongoDB Atlas (free tier available): https://www.mongodb.com/cloud/atlas
+# After creating your cluster, add the connection string to MONGODB_URI in the Render dashboard.
