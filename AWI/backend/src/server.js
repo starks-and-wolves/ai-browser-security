@@ -51,20 +51,28 @@ app.get('/.well-known/llm-text', getAWIManifest);
 
 // API Routes
 app.get('/api/health', async (req, res) => {
+  // Check MongoDB connection
+  const mongoose = require('mongoose');
+  const mongoStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+
   // Check Redis connection
   let redisStatus = 'disconnected';
-  try {
-    await redis.ping();
-    redisStatus = 'connected';
-  } catch (err) {
-    redisStatus = 'error';
+  if (process.env.AWI_USE_REDIS === 'true') {
+    try {
+      await redis.ping();
+      redisStatus = 'connected';
+    } catch (err) {
+      redisStatus = 'error';
+    }
+  } else {
+    redisStatus = 'disabled';
   }
 
   res.json({
     success: true,
     message: 'Blog API is running',
     services: {
-      mongodb: 'connected',  // Assuming connected if we got here
+      mongodb: mongoStatus,
       redis: redisStatus
     },
     timestamp: new Date().toISOString()
@@ -104,13 +112,70 @@ app.use('/api/posts', require('./routes/postRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/comments', require('./routes/commentRoutes'));
 
-// 404 handler
-app.use((req, res, next) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found'
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = path.join(__dirname, '../../frontend/dist');
+  const fs = require('fs');
+
+  // Check if frontend build exists
+  if (fs.existsSync(frontendPath)) {
+    console.log(`✅ Serving frontend from: ${frontendPath}`);
+    app.use(express.static(frontendPath));
+
+    // Catch-all route to serve index.html for client-side routing
+    app.get('*', (req, res) => {
+      // Only serve index.html for non-API routes
+      if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads') && !req.path.startsWith('/.well-known')) {
+        const indexPath = path.join(frontendPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(500).json({
+            success: false,
+            error: 'Frontend build incomplete - index.html not found'
+          });
+        }
+      } else {
+        res.status(404).json({
+          success: false,
+          error: 'Route not found'
+        });
+      }
+    });
+  } else {
+    console.error(`❌ Frontend build not found at: ${frontendPath}`);
+    console.error('⚠️  Make sure to run "npm run build" before starting the server');
+
+    // Serve a helpful message instead of crashing
+    app.get('*', (req, res) => {
+      if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+        res.status(503).send(`
+          <html>
+            <body>
+              <h1>Frontend Not Built</h1>
+              <p>The frontend build was not found at: <code>${frontendPath}</code></p>
+              <p>Please run <code>npm run build</code> to build the frontend.</p>
+              <p>API is still available at <a href="/api/health">/api/health</a></p>
+            </body>
+          </html>
+        `);
+      } else {
+        res.status(404).json({
+          success: false,
+          error: 'Route not found'
+        });
+      }
+    });
+  }
+} else {
+  // 404 handler for development mode
+  app.use((req, res, next) => {
+    res.status(404).json({
+      success: false,
+      error: 'Route not found'
+    });
   });
-});
+}
 
 // Error handler (must be last)
 app.use(errorHandler);
@@ -139,8 +204,10 @@ async function cleanupExpiredSessions() {
 
 // Start server
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0'; // Bind to 0.0.0.0 for production (Render, Docker, etc.)
+
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on ${HOST}:${PORT}`);
 
   // Start session cleanup job (runs every hour)
   startSessionCleanup();

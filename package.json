@@ -4,12 +4,12 @@
   "description": "AI Browser Security - Unified Deployment",
   "private": true,
   "scripts": {
-    "install:backend": "cd AWI/backend && npm install",
-    "install:frontend": "cd AWI/frontend && npm install",
+    "install:backend": "echo '📦 Installing backend dependencies...' && cd AWI/backend && npm install",
+    "install:frontend": "echo '📦 Installing frontend dependencies...' && cd AWI/frontend && npm install",
     "install:all": "npm run install:backend && npm run install:frontend",
-    "build:frontend": "cd AWI/frontend && npm run build",
+    "build:frontend": "echo '🔨 Building frontend...' && cd AWI/frontend && npm run build && echo '✅ Frontend build complete' && ls -la dist/",
     "build": "npm run install:all && npm run build:frontend",
-    "start": "cd AWI/backend && npm start"
+    "start": "echo '🚀 Starting server...' && cd AWI/backend && npm start"
   },
   "engines": {
     "node": ">=18.0.0",

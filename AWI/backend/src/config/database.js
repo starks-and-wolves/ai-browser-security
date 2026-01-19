@@ -26,8 +26,11 @@ const connectDB = async () => {
     });
 
   } catch (error) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
-    process.exit(1);
+    console.error('❌ Error connecting to MongoDB: ${error.message}');
+    console.error('⚠️  Server will continue running, but database operations will fail.');
+    console.error('⚠️  Please check your MONGODB_URI environment variable.');
+    // Don't exit - let the server start even if MongoDB is unavailable
+    // This allows health checks to respond and helps with debugging
   }
 };
 
