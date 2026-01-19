@@ -12,24 +12,6 @@ services:
       - key: MONGODB_URI
         sync: false # Set this in Render dashboard with your MongoDB Atlas connection string
 
-      # Redis Configuration (automatically linked from redis service below)
-      - key: REDIS_HOST
-        fromService:
-          type: redis
-          name: ai-browser-security-redis
-          property: host
-      - key: REDIS_PORT
-        fromService:
-          type: redis
-          name: ai-browser-security-redis
-          property: port
-      # Redis password is included in the connection string
-      # If needed separately, set manually in Render dashboard
-      - key: REDIS_PASSWORD
-        sync: false
-      - key: REDIS_DB
-        value: 0
-
       # Server Configuration
       - key: PORT
         value: 5000
@@ -54,7 +36,7 @@ services:
       - key: AWI_MODE_ENABLED
         value: true
       - key: AWI_USE_REDIS
-        value: true
+        value: false
       - key: AWI_MAX_ACTIONS_PER_SESSION
         value: 1000
       - key: AWI_CLEANUP_INTERVAL_MINUTES
@@ -86,15 +68,6 @@ services:
       - key: VITE_API_URL
         sync: false
 
-  # Redis Cache Service
-  - type: redis
-    name: ai-browser-security-redis
-    plan: starter # Free tier (25MB), upgrade to 'standard' for production
-    maxmemoryPolicy: allkeys-lru # Evict least recently used keys when memory is full
-    ipAllowList: [] # Empty = allow all (Render services only)
-
-
 # Database Note:
 # MongoDB is not available as a native Render service.
 # Use MongoDB Atlas (free tier available): https://www.mongodb.com/cloud/atlas
-# After creating your cluster, add the connection string to MONGODB_URI in the Render dashboard.
