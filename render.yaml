@@ -10,7 +10,7 @@ services:
     envVars:
       # MongoDB Configuration (use MongoDB Atlas)
       - key: MONGODB_URI
-        sync: false  # Set this in Render dashboard with your MongoDB Atlas connection string
+        sync: false # Set this in Render dashboard with your MongoDB Atlas connection string
 
       # Redis Configuration (automatically linked from redis service below)
       - key: REDIS_HOST
@@ -23,12 +23,10 @@ services:
           type: redis
           name: ai-browser-security-redis
           property: port
+      # Redis password is included in the connection string
+      # If needed separately, set manually in Render dashboard
       - key: REDIS_PASSWORD
-        fromService:
-          type: redis
-          name: ai-browser-security-redis
-          property: connectionString
-          envVarKey: REDIS_PASSWORD
+        sync: false
       - key: REDIS_DB
         value: 0
 
@@ -48,7 +46,7 @@ services:
 
       # Security Configuration
       - key: JWT_SECRET
-        generateValue: true  # Render will generate a random secret
+        generateValue: true # Render will generate a random secret
       - key: BCRYPT_ROUNDS
         value: 10
 
@@ -62,12 +60,10 @@ services:
       - key: AWI_CLEANUP_INTERVAL_MINUTES
         value: 60
 
-      # CORS Configuration (will be updated after frontend deployment)
+      # CORS Configuration (set manually after frontend deployment)
+      # Format: https://your-frontend-name.onrender.com
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: ai-browser-security-frontend
-          property: url
+        sync: false
 
       # Admin Dashboard
       - key: ADMIN_DASHBOARD_ENABLED
@@ -85,18 +81,18 @@ services:
         source: /*
         destination: /index.html
     envVars:
+      # Set this to your backend URL after deployment
+      # Format: https://your-backend-name.onrender.com
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: ai-browser-security-backend
-          property: url
+        sync: false
 
   # Redis Cache Service
   - type: redis
     name: ai-browser-security-redis
-    plan: starter  # Free tier (25MB), upgrade to 'standard' for production
-    maxmemoryPolicy: allkeys-lru  # Evict least recently used keys when memory is full
-    ipAllowList: []  # Empty = allow all (Render services only)
+    plan: starter # Free tier (25MB), upgrade to 'standard' for production
+    maxmemoryPolicy: allkeys-lru # Evict least recently used keys when memory is full
+    ipAllowList: [] # Empty = allow all (Render services only)
+
 
 # Database Note:
 # MongoDB is not available as a native Render service.
