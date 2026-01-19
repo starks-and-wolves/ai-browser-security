@@ -43,7 +43,12 @@ export const uploadService = {
 
   // Get file URL
   getFileUrl: (filePath) => {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    // If VITE_API_URL is empty, use relative path (same domain)
+    if (import.meta.env.VITE_API_URL === '') {
+      return filePath;
+    }
+    // Otherwise use the configured API URL
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     return baseURL.replace('/api', '') + filePath;
   },
 };

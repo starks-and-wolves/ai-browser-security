@@ -9,7 +9,7 @@ services:
     envVars:
       # MongoDB Configuration (use MongoDB Atlas)
       - key: MONGODB_URI
-        sync: false  # Set this in Render dashboard with your MongoDB Atlas connection string
+        sync: false # Set this in Render dashboard with your MongoDB Atlas connection string
 
       # Server Configuration
       - key: PORT
@@ -27,7 +27,7 @@ services:
 
       # Security Configuration
       - key: JWT_SECRET
-        generateValue: true  # Render will generate a random secret
+        generateValue: true # Render will generate a random secret
       - key: BCRYPT_ROUNDS
         value: 10
 
@@ -52,7 +52,8 @@ services:
 
       # Frontend API URL (same domain in production)
       - key: VITE_API_URL
-        value: ""  # Empty = same domain
+        value: "" # Empty = same domain
+
 
 # Database Note:
 # MongoDB is not available as a native Render service.

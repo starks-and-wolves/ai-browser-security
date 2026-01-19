@@ -16,6 +16,9 @@
 
 const Redis = require('ioredis');
 
+// Check if Redis is enabled
+const useRedis = process.env.AWI_USE_REDIS === 'true';
+
 // Redis connection configuration
 const redisConfig = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -45,32 +48,57 @@ const redisConfig = {
 
   // Timeouts
   connectTimeout: 10000,
-  commandTimeout: 5000
+  commandTimeout: 5000,
+
+  // Lazy connect - only connect when first command is sent
+  lazyConnect: !useRedis
 };
 
-// Create Redis client
-const redis = new Redis(redisConfig);
+// Mock Redis client for when Redis is disabled
+const mockRedis = {
+  ping: async () => { throw new Error('Redis is disabled'); },
+  get: async () => null,
+  set: async () => 'OK',
+  del: async () => 0,
+  exists: async () => 0,
+  expire: async () => 0,
+  ttl: async () => -1,
+  keys: async () => [],
+  quit: async () => 'OK',
+  on: () => mockRedis,
+  once: () => mockRedis,
+  off: () => mockRedis,
+};
 
-// Redis event handlers
-redis.on('connect', () => {
-  console.log('✅ Redis connected');
-});
+// Create Redis client only if enabled
+let redis;
+if (useRedis) {
+  redis = new Redis(redisConfig);
 
-redis.on('ready', () => {
-  console.log('✅ Redis ready');
-});
+  // Redis event handlers
+  redis.on('connect', () => {
+    console.log('✅ Redis connected');
+  });
 
-redis.on('error', (err) => {
-  console.error('❌ Redis error:', err);
-});
+  redis.on('ready', () => {
+    console.log('✅ Redis ready');
+  });
 
-redis.on('close', () => {
-  console.log('⚠️  Redis connection closed');
-});
+  redis.on('error', (err) => {
+    console.error('❌ Redis error:', err);
+  });
 
-redis.on('reconnecting', () => {
-  console.log('🔄 Redis reconnecting...');
-});
+  redis.on('close', () => {
+    console.log('⚠️  Redis connection closed');
+  });
+
+  redis.on('reconnecting', () => {
+    console.log('🔄 Redis reconnecting...');
+  });
+} else {
+  redis = mockRedis;
+  console.log('⚠️  Redis is disabled - using mock client (in-memory storage)');
+}
 
 // Redis key prefixes (namespacing)
 const KEYS = {
@@ -111,16 +139,23 @@ const TTL = {
  * Create a new Redis client (for pub/sub or separate connections)
  */
 function createRedisClient() {
-  return new Redis(redisConfig);
+  if (useRedis) {
+    return new Redis(redisConfig);
+  }
+  return mockRedis;
 }
 
 /**
  * Graceful shutdown
  */
 async function shutdown() {
-  console.log('Shutting down Redis connections...');
-  await redis.quit();
-  console.log('✅ Redis connections closed');
+  if (useRedis) { 
+    console.log('Shutting down Redis connections...');
+    await redis.quit();
+    console.log('✅ Redis connections closed');
+  } else {
+    console.log('⚠️  Redis was disabled - no connections to close');
+  }
 }
 
 module.exports = {

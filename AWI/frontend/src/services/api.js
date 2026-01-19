@@ -1,8 +1,15 @@
 import axios from 'axios';
 
 // Create axios instance with default config
+// If VITE_API_URL is empty, use relative path (same domain)
+// If VITE_API_URL is set, use it as absolute URL
+// Otherwise default to localhost for development
+const baseURL = import.meta.env.VITE_API_URL === ''
+  ? '/api'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
