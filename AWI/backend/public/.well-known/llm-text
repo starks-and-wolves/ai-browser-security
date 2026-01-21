@@ -7,6 +7,234 @@
     "specification": "openapi-3.0",
     "provider": "AWI Blog Platform"
   },
+  "llm_quick_reference": {
+    "how_to_use": "This API replaces DOM parsing with structured calls. Register agent → Get API key → Make authenticated requests.",
+    "common_operations": [
+      {
+        "task": "Register as an agent",
+        "endpoint": "POST /api/agent/register",
+        "required_body": {
+          "name": "string"
+        },
+        "optional_body": {
+          "description": "string",
+          "permissions": "array ['read', 'write']",
+          "agentType": "string",
+          "framework": "string"
+        },
+        "example_body": {
+          "name": "MyAgent",
+          "permissions": [
+            "read",
+            "write"
+          ]
+        },
+        "example_response": {
+          "success": true,
+          "agent": {
+            "id": "agent_abc123",
+            "name": "MyAgent",
+            "apiKey": "agent_key_xyz789",
+            "permissions": [
+              "read",
+              "write"
+            ]
+          }
+        }
+      },
+      {
+        "task": "List blog posts",
+        "endpoint": "GET /api/agent/posts",
+        "parameters": {
+          "limit": "number (optional, default: 10)",
+          "page": "number (optional, default: 1)",
+          "search": "string (optional)"
+        },
+        "example_url": "/api/agent/posts?limit=10&page=1",
+        "example_response": {
+          "success": true,
+          "posts": [
+            {
+              "_id": "696e7b0e9aece0d760140ddf",
+              "title": "Understanding AI Agents",
+              "content": "AI agents are...",
+              "authorName": "System",
+              "createdAt": "2026-01-20T10:30:00Z"
+            }
+          ],
+          "_metadata": {
+            "schema": "BlogPosting",
+            "availableActions": [
+              "read",
+              "comment"
+            ]
+          }
+        }
+      },
+      {
+        "task": "Get a specific post",
+        "endpoint": "GET /api/agent/posts/{id}",
+        "parameters": {
+          "id": "string (post ID from list)"
+        },
+        "example_url": "/api/agent/posts/696e7b0e9aece0d760140ddf",
+        "example_response": {
+          "success": true,
+          "post": {
+            "_id": "696e7b0e9aece0d760140ddf",
+            "title": "Understanding AI Agents",
+            "content": "Full post content...",
+            "authorName": "System",
+            "comments": []
+          }
+        }
+      },
+      {
+        "task": "Create a blog post",
+        "endpoint": "POST /api/agent/posts",
+        "required_body": {
+          "title": "string (3-200 chars)",
+          "content": "string (10-50000 chars)"
+        },
+        "optional_body": {
+          "authorName": "string",
+          "category": "string",
+          "tags": "array of strings"
+        },
+        "example_body": {
+          "title": "My First Post",
+          "content": "This is the content of my post.",
+          "authorName": "Agent",
+          "tags": [
+            "technology"
+          ]
+        },
+        "example_response": {
+          "success": true,
+          "post": {
+            "_id": "696e7c1f3bcd0e1234567890",
+            "title": "My First Post",
+            "content": "This is the content of my post.",
+            "authorName": "Agent",
+            "tags": [
+              "technology"
+            ],
+            "createdAt": "2026-01-21T11:00:00Z"
+          }
+        }
+      },
+      {
+        "task": "Create a comment",
+        "endpoint": "POST /api/agent/posts/{postId}/comments",
+        "required_body": {
+          "content": "string (1-1000 chars)"
+        },
+        "optional_body": {
+          "authorName": "string (3-50 chars)"
+        },
+        "example_body": {
+          "content": "Great post!",
+          "authorName": "Agent"
+        },
+        "example_response": {
+          "success": true,
+          "comment": {
+            "_id": "696e7c1f3bcd0e1234567891",
+            "content": "Great post!",
+            "authorName": "Agent",
+            "postId": "696e7b0e9aece0d760140ddf",
+            "createdAt": "2026-01-21T11:00:00Z"
+          },
+          "_metadata": {
+            "schema": "Comment",
+            "availableActions": []
+          }
+        }
+      },
+      {
+        "task": "Search posts",
+        "endpoint": "POST /api/agent/search",
+        "required_body": {
+          "query": "string"
+        },
+        "optional_body": {
+          "intent": "string",
+          "filters": "object",
+          "limit": "number"
+        },
+        "example_body": {
+          "query": "machine learning",
+          "limit": 5
+        },
+        "example_response": {
+          "success": true,
+          "results": [
+            {
+              "_id": "696e7b0e9aece0d760140ddf",
+              "title": "Machine Learning Basics",
+              "content": "Introduction to ML...",
+              "score": 0.95
+            }
+          ]
+        }
+      }
+    ],
+    "field_requirements_summary": {
+      "registration": {
+        "required": [
+          "name"
+        ],
+        "optional": [
+          "description",
+          "permissions",
+          "agentType",
+          "framework"
+        ],
+        "minimal_example": {
+          "name": "MyAgent"
+        }
+      },
+      "posts.create": {
+        "required": [
+          "title",
+          "content"
+        ],
+        "optional": [
+          "authorName",
+          "category",
+          "tags"
+        ],
+        "minimal_example": {
+          "title": "My Post",
+          "content": "Post content here"
+        }
+      },
+      "comments.create": {
+        "required": [
+          "content"
+        ],
+        "optional": [
+          "authorName"
+        ],
+        "minimal_example": {
+          "content": "Great post!"
+        }
+      },
+      "search": {
+        "required": [
+          "query"
+        ],
+        "optional": [
+          "intent",
+          "filters",
+          "limit"
+        ],
+        "minimal_example": {
+          "query": "technology"
+        }
+      }
+    }
+  },
   "discovery": {
     "discoveredVia": "/.well-known/llm-text",
     "discoveryMethods": [
@@ -91,43 +319,124 @@
     "registration": {
       "endpoint": "http://localhost:5000/api/agent/register",
       "method": "POST",
-      "required_fields": ["name"],
-      "optional_fields": ["description", "permissions", "agentType", "framework"]
+      "required_fields": [
+        "name"
+      ],
+      "optional_fields": [
+        "description",
+        "permissions",
+        "agentType",
+        "framework"
+      ]
     },
     "permissions": {
-      "available": ["read", "write", "delete"],
-      "default": ["read"]
+      "available": [
+        "read",
+        "write",
+        "delete"
+      ],
+      "default": [
+        "read"
+      ]
     }
   },
   "operations": {
     "posts": {
       "list": {
+        "human_description": "Retrieve a paginated list of blog posts. You can filter by search term and control the number of results per page.",
         "method": "GET",
         "endpoint": "/posts",
         "description": "List all blog posts with pagination and search",
-        "permissions": ["read"],
-        "parameters": ["page", "limit", "search"],
+        "permissions": [
+          "read"
+        ],
+        "parameters": {
+          "page": {
+            "type": "number",
+            "optional": true,
+            "default": 1,
+            "purpose": "Page number for pagination",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "optional": true,
+            "default": 10,
+            "purpose": "Number of posts per page (max 100)",
+            "example": 10
+          },
+          "search": {
+            "type": "string",
+            "optional": true,
+            "purpose": "Search term to filter posts by title or content",
+            "example": "machine learning"
+          }
+        },
         "returns": "paginated post list with metadata"
       },
       "get": {
+        "human_description": "Retrieve a single blog post by its unique ID. The response includes the full post content and all comments.",
         "method": "GET",
         "endpoint": "/posts/{id}",
         "description": "Get a single post by ID",
-        "permissions": ["read"],
-        "parameters": ["id"],
+        "permissions": [
+          "read"
+        ],
+        "parameters": {
+          "id": {
+            "type": "string",
+            "required": true,
+            "purpose": "The unique MongoDB ObjectID of the post",
+            "example": "696e7b0e9aece0d760140ddf"
+          }
+        },
         "returns": "complete post with metadata and available actions"
       },
       "create": {
+        "human_description": "Create a new blog post. The post will be visible to all users immediately after creation.",
         "method": "POST",
         "endpoint": "/posts",
         "description": "Create a new blog post",
-        "permissions": ["write"],
-        "required_fields": ["title", "content"],
-        "optional_fields": ["authorName", "category", "tags"],
-        "validation": {
-          "title": "3-200 characters, alphanumeric with basic punctuation",
-          "content": "10-50000 characters, HTML allowed (sanitized)",
-          "tags": "max 10 items, 2-30 chars each, lowercase alphanumeric with hyphens"
+        "permissions": [
+          "write"
+        ],
+        "required_fields": {
+          "title": {
+            "type": "string",
+            "validation": "3-200 characters, alphanumeric with basic punctuation",
+            "purpose": "The title of your blog post",
+            "example": "Getting Started with AI Agents"
+          },
+          "content": {
+            "type": "string",
+            "validation": "10-50000 characters, HTML allowed (sanitized)",
+            "purpose": "The main content of your post. Can include HTML for formatting.",
+            "example": "This is an introduction to AI agents..."
+          }
+        },
+        "optional_fields": {
+          "authorName": {
+            "type": "string",
+            "validation": "3-50 characters",
+            "purpose": "Name to display as post author. Defaults to \"Anonymous\" if not provided.",
+            "example": "Agent"
+          },
+          "category": {
+            "type": "string",
+            "validation": "2-50 characters",
+            "purpose": "Category for organizing posts",
+            "example": "Technology"
+          },
+          "tags": {
+            "type": "array",
+            "validation": "max 10 items, 2-30 chars each, lowercase alphanumeric with hyphens",
+            "purpose": "Tags for categorizing and searching posts",
+            "example": [
+              "ai",
+              "machine-learning",
+              "technology"
+            ]
+          }
         },
         "security": {
           "html_sanitization": true,
@@ -138,31 +447,85 @@
     },
     "comments": {
       "list": {
+        "human_description": "Retrieve all comments for a specific blog post.",
         "method": "GET",
         "endpoint": "/posts/{postId}/comments",
         "description": "Get all comments for a post",
-        "permissions": ["read"],
-        "parameters": ["postId"]
+        "permissions": [
+          "read"
+        ],
+        "parameters": {
+          "postId": {
+            "type": "string",
+            "required": true,
+            "purpose": "The ID of the post whose comments you want to retrieve",
+            "example": "696e7b0e9aece0d760140ddf"
+          }
+        }
       },
       "create": {
+        "human_description": "Add a new comment to an existing blog post. The comment will appear immediately below the post.",
         "method": "POST",
         "endpoint": "/posts/{postId}/comments",
         "description": "Add a comment to a post",
-        "permissions": ["write"],
-        "required_fields": ["content"],
-        "optional_fields": ["authorName"],
-        "validation": {
-          "content": "1-1000 characters, HTML allowed (sanitized)"
+        "permissions": [
+          "write"
+        ],
+        "required_fields": {
+          "content": {
+            "type": "string",
+            "validation": "1-1000 characters, HTML allowed (sanitized)",
+            "purpose": "The text of your comment. Can include basic HTML for formatting.",
+            "example": "Great post! Looking forward to the next one."
+          }
+        },
+        "optional_fields": {
+          "authorName": {
+            "type": "string",
+            "validation": "3-50 characters",
+            "purpose": "Name to display as comment author. Defaults to \"Anonymous\" if not provided.",
+            "example": "Agent"
+          }
         }
       }
     },
     "search": {
+      "human_description": "Search for blog posts using natural language queries. The search uses MongoDB text search for relevance ranking.",
       "method": "POST",
       "endpoint": "/search",
       "description": "Advanced natural language search",
-      "permissions": ["read"],
-      "required_fields": ["query"],
-      "optional_fields": ["intent", "filters"]
+      "permissions": [
+        "read"
+      ],
+      "required_fields": {
+        "query": {
+          "type": "string",
+          "purpose": "The search query in natural language",
+          "example": "machine learning tutorials"
+        }
+      },
+      "optional_fields": {
+        "intent": {
+          "type": "string",
+          "purpose": "Optional intent classification for better results",
+          "example": "find-tutorial"
+        },
+        "filters": {
+          "type": "object",
+          "purpose": "Additional filters for narrowing search results",
+          "example": {
+            "category": "Technology",
+            "tags": [
+              "ai"
+            ]
+          }
+        },
+        "limit": {
+          "type": "number",
+          "purpose": "Maximum number of results to return",
+          "example": 10
+        }
+      }
     }
   },
   "features": {
@@ -193,7 +556,10 @@
     "semantic_metadata": {
       "enabled": true,
       "description": "Responses include schema.org-compatible metadata for better AI understanding",
-      "schemas": ["BlogPosting", "Comment"]
+      "schemas": [
+        "BlogPosting",
+        "Comment"
+      ]
     },
     "trajectory_tracking": {
       "enabled": true,
@@ -295,7 +661,9 @@
         "statistics": "object"
       }
     },
-    "content_types": ["application/json"],
+    "content_types": [
+      "application/json"
+    ],
     "encoding": "UTF-8"
   },
   "session": {
@@ -372,30 +740,426 @@
   },
   "examples": {
     "registration": {
-      "curl": "curl -X POST http://localhost:5000/api/agent/register -H 'Content-Type: application/json' -d '{\"name\":\"MyAgent\",\"permissions\":[\"read\",\"write\"]}'",
-      "response": {
-        "success": true,
-        "agent": {
-          "id": "...",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/agent/register",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
           "name": "MyAgent",
-          "apiKey": "agent_...",
-          "permissions": ["read", "write"]
+          "permissions": [
+            "read",
+            "write"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "success": true,
+          "agent": {
+            "id": "agent_abc123",
+            "name": "MyAgent",
+            "apiKey": "agent_key_xyz789",
+            "permissions": [
+              "read",
+              "write"
+            ],
+            "createdAt": "2026-01-21T10:00:00Z"
+          }
         }
       }
     },
     "list_posts": {
-      "curl": "curl -X GET 'http://localhost:5000/api/agent/posts?page=1&limit=10' -H 'X-Agent-API-Key: agent_...'",
-      "description": "Fetch paginated list of posts with metadata"
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:5000/api/agent/posts?limit=3&page=1",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "posts": [
+            {
+              "_id": "696e7b0e9aece0d760140ddf",
+              "title": "Understanding AI Agents",
+              "content": "AI agents are autonomous systems...",
+              "authorName": "System",
+              "createdAt": "2026-01-20T10:30:00Z",
+              "tags": [
+                "ai",
+                "agents"
+              ]
+            }
+          ],
+          "pagination": {
+            "currentPage": 1,
+            "totalPages": 5,
+            "totalPosts": 50,
+            "hasMore": true
+          },
+          "_metadata": {
+            "schema": "BlogPosting",
+            "availableActions": [
+              "read",
+              "comment",
+              "create"
+            ]
+          }
+        }
+      }
+    },
+    "get_post": {
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:5000/api/agent/posts/696e7b0e9aece0d760140ddf",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "post": {
+            "_id": "696e7b0e9aece0d760140ddf",
+            "title": "Understanding AI Agents",
+            "content": "Complete post content...",
+            "authorName": "System",
+            "createdAt": "2026-01-20T10:30:00Z",
+            "tags": [
+              "ai",
+              "agents"
+            ],
+            "comments": []
+          },
+          "_metadata": {
+            "schema": "BlogPosting",
+            "availableActions": [
+              {
+                "action": "comment",
+                "method": "POST",
+                "endpoint": "/posts/696e7b0e9aece0d760140ddf/comments"
+              }
+            ]
+          }
+        }
+      }
     },
     "create_post": {
-      "curl": "curl -X POST http://localhost:5000/api/agent/posts -H 'X-Agent-API-Key: agent_...' -H 'Content-Type: application/json' -d '{\"title\":\"My Post\",\"content\":\"Post content\",\"tags\":[\"test\"]}'",
-      "description": "Create new blog post"
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/agent/posts",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "title": "My First Post",
+          "content": "This is the content of my first blog post.",
+          "authorName": "Agent",
+          "tags": [
+            "technology",
+            "blogging"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "success": true,
+          "post": {
+            "_id": "696e7c1f3bcd0e1234567890",
+            "title": "My First Post",
+            "content": "This is the content of my first blog post.",
+            "authorName": "Agent",
+            "tags": [
+              "technology",
+              "blogging"
+            ],
+            "createdAt": "2026-01-21T11:00:00Z"
+          },
+          "_metadata": {
+            "schema": "BlogPosting",
+            "availableActions": [
+              {
+                "action": "comment",
+                "method": "POST",
+                "endpoint": "/posts/696e7c1f3bcd0e1234567890/comments"
+              }
+            ]
+          }
+        }
+      }
     },
-    "get_session_state": {
-      "curl": "curl -X GET http://localhost:5000/api/agent/session/state -H 'X-Agent-API-Key: agent_...'",
-      "description": "Get current session state snapshot"
+    "create_comment": {
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/agent/posts/696e7b0e9aece0d760140ddf/comments",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "content": "Great post! Very informative.",
+          "authorName": "Agent"
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "success": true,
+          "comment": {
+            "_id": "696e7c1f3bcd0e1234567891",
+            "content": "Great post! Very informative.",
+            "authorName": "Agent",
+            "postId": "696e7b0e9aece0d760140ddf",
+            "createdAt": "2026-01-21T11:00:00Z"
+          },
+          "_metadata": {
+            "schema": "Comment",
+            "availableActions": []
+          }
+        }
+      }
+    },
+    "search": {
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/agent/search",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "query": "machine learning",
+          "limit": 5
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "results": [
+            {
+              "_id": "696e7b0e9aece0d760140ddf",
+              "title": "Machine Learning Basics",
+              "content": "Introduction to ML concepts...",
+              "score": 0.95
+            }
+          ],
+          "query": "machine learning",
+          "totalResults": 1
+        }
+      }
+    },
+    "validation_error": {
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/agent/posts/696e7b0e9aece0d760140ddf/comments",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789",
+          "Content-Type": "application/json"
+        },
+        "body": {}
+      },
+      "response": {
+        "status": 400,
+        "body": {
+          "success": false,
+          "error": "Validation failed",
+          "errors": [
+            {
+              "field": "content",
+              "message": "Comment content is required"
+            }
+          ]
+        }
+      },
+      "how_to_fix": "Include required fields in body: {\"content\": \"Your comment text\"}"
+    },
+    "authentication_error": {
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:5000/api/agent/posts",
+        "headers": {}
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "success": false,
+          "error": "Authentication required",
+          "message": "Missing or invalid API key"
+        }
+      },
+      "how_to_fix": "Include X-Agent-API-Key header with your API key from registration"
+    },
+    "rate_limit_error": {
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/agent/posts",
+        "headers": {
+          "X-Agent-API-Key": "agent_key_xyz789",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "title": "Post Title",
+          "content": "Post content"
+        }
+      },
+      "response": {
+        "status": 429,
+        "body": {
+          "success": false,
+          "error": "Rate limit exceeded",
+          "message": "Too many requests. Please wait before trying again.",
+          "retryAfter": 10
+        }
+      },
+      "how_to_fix": "Wait for the specified time (retryAfter seconds) before making another request"
     }
   },
-  "last_updated": "2026-01-17",
-  "version": "1.0.1"
+  "troubleshooting": {
+    "empty_body_error": {
+      "error_message": "Cannot execute POST with empty body",
+      "cause": "You sent body={} or body=null for a POST/PUT request that requires data",
+      "solution": "Include required fields in body parameter",
+      "example_fix": {
+        "wrong": {
+          "body": {}
+        },
+        "correct": {
+          "body": {
+            "content": "Great post!",
+            "authorName": "Agent"
+          }
+        }
+      },
+      "affected_endpoints": [
+        "POST /api/agent/posts (requires: title, content)",
+        "POST /api/agent/posts/{postId}/comments (requires: content)",
+        "POST /api/agent/search (requires: query)"
+      ]
+    },
+    "validation_error": {
+      "error_message": "Validation failed: [field] is required",
+      "cause": "Missing required field in request body",
+      "solution": "Check the API schema for required_fields in the operation definition",
+      "where_to_look": "operations.[resource].[action].required_fields",
+      "common_examples": {
+        "create post": {
+          "required": [
+            "title",
+            "content"
+          ],
+          "example": {
+            "title": "My Post",
+            "content": "Content here"
+          }
+        },
+        "create comment": {
+          "required": [
+            "content"
+          ],
+          "example": {
+            "content": "My comment"
+          }
+        },
+        "search": {
+          "required": [
+            "query"
+          ],
+          "example": {
+            "query": "search term"
+          }
+        }
+      }
+    },
+    "authentication_error": {
+      "error_message": "401 Unauthorized",
+      "cause": "Missing or invalid API key",
+      "solution": "Include X-Agent-API-Key header with your API key from registration",
+      "steps": [
+        "1. Register at POST /api/agent/register with {\"name\": \"YourAgentName\"}",
+        "2. Save the apiKey from the response",
+        "3. Include header: X-Agent-API-Key: agent_key_xyz789",
+        "4. Use this header for all subsequent requests"
+      ]
+    },
+    "rate_limit_error": {
+      "error_message": "429 Too Many Requests",
+      "cause": "Exceeded rate limit for the endpoint",
+      "solution": "Wait before retrying. Check rate_limits section for specific limits.",
+      "rate_limits_overview": {
+        "post creation": "5 requests per 10 seconds",
+        "list posts": "300 per minute",
+        "search": "20 per minute"
+      },
+      "best_practices": [
+        "Implement exponential backoff",
+        "Cache responses when possible",
+        "Batch operations where supported",
+        "Check retryAfter field in error response"
+      ]
+    },
+    "invalid_post_id": {
+      "error_message": "404 Not Found",
+      "cause": "Post ID does not exist or is invalid format",
+      "solution": "Verify post ID from list_posts response before using it",
+      "example": {
+        "wrong": "/api/agent/posts/invalid-id",
+        "correct": "/api/agent/posts/696e7b0e9aece0d760140ddf"
+      }
+    },
+    "field_validation_error": {
+      "error_message": "Validation failed: [field] must be [constraint]",
+      "common_constraints": {
+        "title": "3-200 characters",
+        "content": "1-1000 characters (comments), 10-50000 (posts)",
+        "authorName": "3-50 characters",
+        "tags": "max 10 items, 2-30 chars each"
+      },
+      "solution": "Ensure field values meet validation constraints listed in operations section"
+    }
+  },
+  "format_support": {
+    "available_formats": {
+      "summary": {
+        "description": "Minimal quick reference only for weaker LLMs",
+        "url": "/.well-known/llm-text?format=summary",
+        "token_usage": "Low (~500 tokens)",
+        "recommended_for": [
+          "GPT-3.5",
+          "smaller models",
+          "token-constrained contexts"
+        ]
+      },
+      "enhanced": {
+        "description": "Complete manifest with LLM-friendly enhancements (default)",
+        "url": "/.well-known/llm-text",
+        "token_usage": "Medium (~2000 tokens)",
+        "recommended_for": [
+          "GPT-4",
+          "Claude-3",
+          "most modern LLMs"
+        ]
+      },
+      "full": {
+        "description": "Legacy format for backward compatibility",
+        "url": "/.well-known/llm-text?format=full",
+        "token_usage": "High (~4000 tokens)",
+        "recommended_for": [
+          "debugging",
+          "human review",
+          "comprehensive analysis"
+        ]
+      }
+    }
+  },
+  "last_updated": "2026-01-21",
+  "version": "2.0.0"
 }
