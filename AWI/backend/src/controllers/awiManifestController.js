@@ -47,7 +47,15 @@ const generateQuickReference = (baseUrl) => {
         parameters: {
           limit: "number (optional, default: 10)",
           page: "number (optional, default: 1)",
-          search: "string (optional)"
+          search: "string (optional)",
+          tag: "string (optional)",
+          category: "string (optional)",
+          minViews: "number (optional)",
+          maxViews: "number (optional)",
+          minComments: "number (optional)",
+          maxComments: "number (optional)",
+          sortBy: "string (optional, default: createdAt)",
+          sortOrder: "string (optional, default: desc)"
         },
         example_url: "/api/agent/posts?limit=10&page=1",
         example_response: {
@@ -58,6 +66,8 @@ const generateQuickReference = (baseUrl) => {
               title: "Understanding AI Agents",
               content: "AI agents are...",
               authorName: "System",
+              viewCount: 1250,
+              commentsCount: 23,
               createdAt: "2026-01-20T10:30:00Z"
             }
           ],
@@ -65,6 +75,48 @@ const generateQuickReference = (baseUrl) => {
             schema: "BlogPosting",
             availableActions: ["read", "comment"]
           }
+        }
+      },
+      {
+        task: "Get popular posts (sorted by views)",
+        endpoint: "GET /api/agent/posts",
+        parameters: {
+          sortBy: "viewCount",
+          sortOrder: "desc",
+          minViews: "100"
+        },
+        example_url: "/api/agent/posts?sortBy=viewCount&sortOrder=desc&minViews=100",
+        example_response: {
+          success: true,
+          posts: [
+            {
+              _id: "696e7b0e9aece0d760140ddf",
+              title: "Understanding AI Agents",
+              viewCount: 1250,
+              commentsCount: 23
+            }
+          ]
+        }
+      },
+      {
+        task: "Get highly discussed posts (by comments)",
+        endpoint: "GET /api/agent/posts",
+        parameters: {
+          sortBy: "commentsCount",
+          sortOrder: "desc",
+          minComments: "10"
+        },
+        example_url: "/api/agent/posts?sortBy=commentsCount&sortOrder=desc&minComments=10",
+        example_response: {
+          success: true,
+          posts: [
+            {
+              _id: "696e7b0e9aece0d760140ddf",
+              title: "Understanding AI Agents",
+              viewCount: 1250,
+              commentsCount: 23
+            }
+          ]
         }
       },
       {
@@ -539,7 +591,14 @@ const generateTroubleshooting = () => {
  */
 const getAWIManifest = (req, res) => {
   const format = req.query.format || 'enhanced'; // 'summary', 'enhanced', 'full'
-  const baseUrl = 'http://localhost:5000/api/agent';
+
+  // Dynamically construct base URL from request or environment
+  // Render.com automatically provides RENDER_EXTERNAL_URL
+  const protocol = process.env.RENDER_EXTERNAL_URL ? 'https' : (req.protocol || 'http');
+  const host = process.env.RENDER_EXTERNAL_URL
+    ? process.env.RENDER_EXTERNAL_URL.replace(/^https?:\/\//, '')
+    : req.get('host') || 'localhost:5000';
+  const baseUrl = `${protocol}://${host}/api/agent`;
 
   // For summary format, return only quick reference
   if (format === 'summary') {
@@ -629,19 +688,19 @@ const getAWIManifest = (req, res) => {
       ]
     },
     endpoints: {
-      base: 'http://localhost:5000/api/agent',
-      capabilities: 'http://localhost:5000/api/agent/capabilities',
-      documentation: 'http://localhost:5000/api/agent/docs',
-      openapi_spec: 'http://localhost:5000/api/agent/docs',
-      swagger_ui: 'http://localhost:5000/api/agent/docs/ui',
-      registration: 'http://localhost:5000/api/agent/register'
+      base: baseUrl,
+      capabilities: `${baseUrl}/capabilities`,
+      documentation: `${baseUrl}/docs`,
+      openapi_spec: `${baseUrl}/docs`,
+      swagger_ui: `${baseUrl}/docs/ui`,
+      registration: `${baseUrl}/register`
     },
     authentication: {
       type: 'bearer',
       scheme: 'api-key',
       headerName: 'X-Agent-API-Key',
       registration: {
-        endpoint: 'http://localhost:5000/api/agent/register',
+        endpoint: `${baseUrl}/register`,
         method: 'POST',
         required_fields: ['name'],
         optional_fields: ['description', 'permissions', 'agentType', 'framework']
@@ -654,10 +713,10 @@ const getAWIManifest = (req, res) => {
     operations: {
       posts: {
         list: {
-          human_description: 'Retrieve a paginated list of blog posts. You can filter by search term and control the number of results per page.',
+          human_description: 'Retrieve a paginated list of blog posts. You can filter by search term, views, comments, tags, and category. Posts can be sorted by various fields including popularity (views) and engagement (comments).',
           method: 'GET',
           endpoint: '/posts',
-          description: 'List all blog posts with pagination and search',
+          description: 'List all blog posts with pagination, search, filters, and sorting',
           permissions: ['read'],
           parameters: {
             page: {
@@ -679,9 +738,61 @@ const getAWIManifest = (req, res) => {
               optional: true,
               purpose: 'Search term to filter posts by title or content',
               example: 'machine learning'
+            },
+            tag: {
+              type: 'string',
+              optional: true,
+              purpose: 'Filter posts by tag',
+              example: 'technology'
+            },
+            category: {
+              type: 'string',
+              optional: true,
+              purpose: 'Filter posts by category',
+              example: 'AI'
+            },
+            minViews: {
+              type: 'number',
+              optional: true,
+              purpose: 'Minimum view count - get posts with at least this many views',
+              example: 100
+            },
+            maxViews: {
+              type: 'number',
+              optional: true,
+              purpose: 'Maximum view count - get posts with at most this many views',
+              example: 1000
+            },
+            minComments: {
+              type: 'number',
+              optional: true,
+              purpose: 'Minimum comment count - get posts with at least this many comments',
+              example: 5
+            },
+            maxComments: {
+              type: 'number',
+              optional: true,
+              purpose: 'Maximum comment count - get posts with at most this many comments',
+              example: 50
+            },
+            sortBy: {
+              type: 'string',
+              optional: true,
+              default: 'createdAt',
+              purpose: 'Field to sort by',
+              example: 'viewCount',
+              allowed_values: ['createdAt', 'viewCount', 'commentsCount', 'title', 'publishedAt']
+            },
+            sortOrder: {
+              type: 'string',
+              optional: true,
+              default: 'desc',
+              purpose: 'Sort direction - ascending or descending',
+              example: 'desc',
+              allowed_values: ['asc', 'desc']
             }
           },
-          returns: 'paginated post list with metadata'
+          returns: 'paginated post list with metadata and applied filters'
         },
         get: {
           human_description: 'Retrieve a single blog post by its unique ID. The response includes the full post content and all comments.',
@@ -823,12 +934,12 @@ const getAWIManifest = (req, res) => {
         enabled: true,
         description: 'Server-side session state tracking for stateful agent interactions',
         endpoints: {
-          state: 'http://localhost:5000/api/agent/session/state',
-          history: 'http://localhost:5000/api/agent/session/history',
-          diff: 'http://localhost:5000/api/agent/session/diff',
-          cache: 'http://localhost:5000/api/agent/session/cache',
-          end: 'http://localhost:5000/api/agent/session/end',
-          list: 'http://localhost:5000/api/agent/sessions'
+          state: `${baseUrl}/session/state`,
+          history: `${baseUrl}/session/history`,
+          diff: `${baseUrl}/session/diff`,
+          cache: `${baseUrl}/session/cache`,
+          end: `${baseUrl}/session/end`,
+          list: `${baseUrl}/sessions`
         },
         benefits: [
           '500x token reduction vs stateless API',
@@ -851,12 +962,12 @@ const getAWIManifest = (req, res) => {
       trajectory_tracking: {
         enabled: true,
         description: 'Complete action history with observations for debugging and RL training',
-        endpoint: 'http://localhost:5000/api/agent/session/history'
+        endpoint: `${baseUrl}/session/history`
       },
       incremental_updates: {
         enabled: true,
         description: 'Get only changed state via diff endpoint',
-        endpoint: 'http://localhost:5000/api/agent/session/diff'
+        endpoint: `${baseUrl}/session/diff`
       },
       pagination: {
         enabled: true,
@@ -942,8 +1053,8 @@ const getAWIManifest = (req, res) => {
       awi_principles: 'Based on arXiv:2506.10953v1'
     },
     documentation: {
-      swagger_ui: 'http://localhost:5000/api/agent/docs/ui',
-      openapi_json: 'http://localhost:5000/api/agent/docs',
+      swagger_ui: `${baseUrl}/docs/ui`,
+      openapi_json: `${baseUrl}/docs`,
       implementation_guide: '/docs/AWI_STATE_IMPLEMENTATION.md',
       security_guide: '/docs/SECURITY.md'
     },

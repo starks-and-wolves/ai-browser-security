@@ -101,6 +101,8 @@ postSchema.index({ tags: 1 });
 postSchema.index({ category: 1 });
 postSchema.index({ createdAt: -1 });
 postSchema.index({ publishedAt: -1 });
+postSchema.index({ viewCount: -1 }); // For sorting by popularity
+postSchema.index({ commentsCount: -1 }); // For sorting by engagement
 postSchema.index({ title: 'text', content: 'text' });
 
 const Post = mongoose.model('Post', postSchema);

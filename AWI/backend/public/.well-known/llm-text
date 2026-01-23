@@ -48,7 +48,15 @@
         "parameters": {
           "limit": "number (optional, default: 10)",
           "page": "number (optional, default: 1)",
-          "search": "string (optional)"
+          "search": "string (optional)",
+          "tag": "string (optional)",
+          "category": "string (optional)",
+          "minViews": "number (optional)",
+          "maxViews": "number (optional)",
+          "minComments": "number (optional)",
+          "maxComments": "number (optional)",
+          "sortBy": "string (optional, default: createdAt)",
+          "sortOrder": "string (optional, default: desc)"
         },
         "example_url": "/api/agent/posts?limit=10&page=1",
         "example_response": {
@@ -59,6 +67,8 @@
               "title": "Understanding AI Agents",
               "content": "AI agents are...",
               "authorName": "System",
+              "viewCount": 1250,
+              "commentsCount": 23,
               "createdAt": "2026-01-20T10:30:00Z"
             }
           ],
@@ -69,6 +79,48 @@
               "comment"
             ]
           }
+        }
+      },
+      {
+        "task": "Get popular posts (sorted by views)",
+        "endpoint": "GET /api/agent/posts",
+        "parameters": {
+          "sortBy": "viewCount",
+          "sortOrder": "desc",
+          "minViews": "100"
+        },
+        "example_url": "/api/agent/posts?sortBy=viewCount&sortOrder=desc&minViews=100",
+        "example_response": {
+          "success": true,
+          "posts": [
+            {
+              "_id": "696e7b0e9aece0d760140ddf",
+              "title": "Understanding AI Agents",
+              "viewCount": 1250,
+              "commentsCount": 23
+            }
+          ]
+        }
+      },
+      {
+        "task": "Get highly discussed posts (by comments)",
+        "endpoint": "GET /api/agent/posts",
+        "parameters": {
+          "sortBy": "commentsCount",
+          "sortOrder": "desc",
+          "minComments": "10"
+        },
+        "example_url": "/api/agent/posts?sortBy=commentsCount&sortOrder=desc&minComments=10",
+        "example_response": {
+          "success": true,
+          "posts": [
+            {
+              "_id": "696e7b0e9aece0d760140ddf",
+              "title": "Understanding AI Agents",
+              "viewCount": 1250,
+              "commentsCount": 23
+            }
+          ]
         }
       },
       {
@@ -343,10 +395,10 @@
   "operations": {
     "posts": {
       "list": {
-        "human_description": "Retrieve a paginated list of blog posts. You can filter by search term and control the number of results per page.",
+        "human_description": "Retrieve a paginated list of blog posts. You can filter by search term, views, comments, tags, and category. Posts can be sorted by various fields including popularity (views) and engagement (comments).",
         "method": "GET",
         "endpoint": "/posts",
-        "description": "List all blog posts with pagination and search",
+        "description": "List all blog posts with pagination, search, filters, and sorting",
         "permissions": [
           "read"
         ],
@@ -370,9 +422,70 @@
             "optional": true,
             "purpose": "Search term to filter posts by title or content",
             "example": "machine learning"
+          },
+          "tag": {
+            "type": "string",
+            "optional": true,
+            "purpose": "Filter posts by tag",
+            "example": "technology"
+          },
+          "category": {
+            "type": "string",
+            "optional": true,
+            "purpose": "Filter posts by category",
+            "example": "AI"
+          },
+          "minViews": {
+            "type": "number",
+            "optional": true,
+            "purpose": "Minimum view count - get posts with at least this many views",
+            "example": 100
+          },
+          "maxViews": {
+            "type": "number",
+            "optional": true,
+            "purpose": "Maximum view count - get posts with at most this many views",
+            "example": 1000
+          },
+          "minComments": {
+            "type": "number",
+            "optional": true,
+            "purpose": "Minimum comment count - get posts with at least this many comments",
+            "example": 5
+          },
+          "maxComments": {
+            "type": "number",
+            "optional": true,
+            "purpose": "Maximum comment count - get posts with at most this many comments",
+            "example": 50
+          },
+          "sortBy": {
+            "type": "string",
+            "optional": true,
+            "default": "createdAt",
+            "purpose": "Field to sort by",
+            "example": "viewCount",
+            "allowed_values": [
+              "createdAt",
+              "viewCount",
+              "commentsCount",
+              "title",
+              "publishedAt"
+            ]
+          },
+          "sortOrder": {
+            "type": "string",
+            "optional": true,
+            "default": "desc",
+            "purpose": "Sort direction - ascending or descending",
+            "example": "desc",
+            "allowed_values": [
+              "asc",
+              "desc"
+            ]
           }
         },
-        "returns": "paginated post list with metadata"
+        "returns": "paginated post list with metadata and applied filters"
       },
       "get": {
         "human_description": "Retrieve a single blog post by its unique ID. The response includes the full post content and all comments.",
